@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Мои заказы</h1>
+    {% if current_user.is_authenticated %}
+    {% endif %}
+    {% for item in orders %}
+        <div class="col-md6 border rounded">
+            <div>
+                 ID заказа: {{ item.offer_id }}
+            </div>
+            <div>
+                Автор заказа - {{ current_user.name }}, Дата заказа - {{ item.created_date }}
+            </div>
+            {% if current_user.is_authenticated%}
+                <div>
+                    <a href="/orders_delete/{{ item.id }}/{{item.offer_id}}" class="btn btn-danger">Отменить заказ</a>
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endblock %}

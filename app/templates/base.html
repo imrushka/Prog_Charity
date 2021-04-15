@@ -15,8 +15,8 @@
         <a class="navbar-brand" href="#">Наше приложение</a>
         {% if current_user.is_authenticated %}
             <a class="navbar-brand" href="/logout">{{ current_user.name }}</a>
-            <a class="navbar-brand" href="/my_orders">Orders</a>
-            <a class="navbar-brand" href="/my_offers">Offers</a>
+            <a class="navbar-brand" href="/my_orders">My orders</a>
+            <a class="navbar-brand" href="/orders">Orders to accept</a>
         {% else %}
             <p>
                 <a class="btn btn-primary " href="/register">Зарегистрироваться</a>

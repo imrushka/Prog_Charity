@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Все прежложения</h1>
+    <h1>Все предложения</h1>
     {% if current_user.is_authenticated %}
         <a href="offers" class="btn btn-secondary">Добавить предложение</a>
     {% endif %}
@@ -19,6 +19,10 @@
                 <div>
                     <a href="/offers/{{ item.id }}" class="btn btn-warning">Изменить</a>
                     <a href="/offers_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
+                </div>
+            {% elif current_user.is_authenticated and current_user != item.user%}
+                <div>
+                    <a href="/make_order/{{ item.id }}" class="btn btn-warning">Заказать</a>
                 </div>
             {% endif %}
         </div>

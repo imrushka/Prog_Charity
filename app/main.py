@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
+from app.data.orders import Order
 from forms.offers import OfferForm
 from forms.user import RegisterForm, LoginForm
 from data.offers import Offer
@@ -33,7 +34,7 @@ def main():
 
 @app.route('/offers', methods=['GET', 'POST'])
 @login_required
-def add_news():
+def add_offer():
     form = OfferForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
@@ -48,9 +49,60 @@ def add_news():
     return render_template('offers.html', title='Добавление предложения', form=form)
 
 
+@app.route("/make_order/<int:id>")
+@login_required
+def make_order(id):
+    #создаем заказ и помещаем его в БД
+    order = Order()
+    db_sess = db_session.create_session()
+    order.offer_id = id
+
+    #убираем предложение из списка не выбранных
+    offer = db_sess.query(Offer).filter((Offer.id == id)).one()
+    offer.is_taken = True
+
+    order.user_id = current_user.id
+    order.is_active = True
+    db_sess.add(order)
+    db_sess.commit()
+    return redirect("/my_orders")
+
+
+
+@app.route("/my_orders")
+@login_required
+def my_orders():
+    db_sess = db_session.create_session()
+    if current_user.is_authenticated:
+        orders = db_sess.query(Order).filter((Order.user_id == current_user.id), (Order.is_active == True))
+    else:
+        orders = db_sess.query(Order).filter(Order.is_active == True)
+    db_sess.commit()
+    return render_template("orders.html", orders=orders)
+
+
+@app.route('/orders_delete/<int:id>/<int:offer_id>')
+@login_required
+def orders_delete(id, offer_id):
+    db_sess = db_session.create_session()
+    offer = db_sess.query(Offer).filter(Offer.id == offer_id).first()
+    if offer:
+        offer.is_taken = False
+        db_sess.commit()
+    else:
+        abort(404)
+    order = db_sess.query(Order).filter(Order.id == id).first()
+    if order:
+        order.is_active = False
+        db_sess.commit()
+    else:
+        abort(404)
+    return redirect('/my_orders')
+
+
 @app.route('/offers_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
-def news_delete(id):
+def offers_delete(id):
     db_sess = db_session.create_session()
     offers = db_sess.query(Offer).filter(Offer.id == id, Offer.user == current_user).first()
     if offers:
