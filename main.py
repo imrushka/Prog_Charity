@@ -1,22 +1,28 @@
 from flask import Flask, render_template, redirect
-from data.offers import Offers
+from data.offers import Offer
 from data.users import User
+from data.orders import Order
 from data import db_session
 from forms.user import RegisterForm
+from flask_login import LoginManager
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
 def main():
     db_session.global_init("db/blogs.db")
-    app.run()
+    app.run(debug=True)
 
 
 @app.route("/")
 def index():
     db_sess = db_session.create_session()
-    offers = db_sess.query(Offers).filter(Offers.is_private != True)
+    offers = db_sess.query(Offer).all()
     return render_template("index.html", offers=offers)
 
 
