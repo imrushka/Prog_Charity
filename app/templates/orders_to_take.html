@@ -13,7 +13,7 @@
             </div>
             {% if current_user.is_authenticated%}
                 <div>
-                    <a href="/orders_fulfilled/{{ item.id }}/{{item.offer_id}}" class="btn btn-warning">Order is fulfilled</a>
+                    <a href="/orders_fulfilled/{{ item.id }}/{{item.offer_id}}" class="btn btn-success">Order is fulfilled</a>
                 </div>
             {% endif %}
         </div>

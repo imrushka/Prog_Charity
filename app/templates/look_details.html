@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+      <div class="col-md6 border rounded">
+        <h1>Order ID: {{id}}</h1>
+          <h2>{{title}}</h2>
+          <div>
+              Order content: {{content}}
+          </div>
+          <div>
+              Author - {{ user.name }}, date of creation - {{ date }}
+          </div>
+            <div>
+                <a href="/my_orders" class="btn btn-warning">Back</a>
+            </div>
+      </div>
+{% endblock %}

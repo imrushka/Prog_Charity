@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
+from flask_restful import reqparse, abort, Api, Resource
 from app.data.orders import Order
 from data import db_session
 from data.offers import Offer
@@ -9,6 +9,8 @@ from forms.offers import OfferForm
 from forms.user import RegisterForm, LoginForm
 
 app = Flask(__name__)
+api = Api(app)
+# run_with_ngrok(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -29,7 +31,7 @@ def logout():
 
 def main():
     db_session.global_init("db/charity.db")
-    app.run(debug=True)
+    app.run()
 
 
 @app.route('/offers', methods=['GET', 'POST'])
@@ -65,7 +67,7 @@ def orders_fulfilled(id, offer_id):
         db_sess.commit()
     else:
         abort(404)
-    return redirect('/my_orders')
+    return redirect('/')
 
 
 @app.route("/make_order/<int:id>")
@@ -88,8 +90,6 @@ def make_order(id):
         return redirect("/my_orders")
     else:
         abort(404)
-
-
 
 
 @app.route("/orders_to_take")
@@ -115,6 +115,19 @@ def my_orders():
         orders = db_sess.query(Order).filter(Order.is_active == True)
     db_sess.commit()
     return render_template("orders.html", orders=orders)
+
+@app.route("/look_details/<int:offer_id>")
+@login_required
+def look_details(offer_id):
+    db_sess = db_session.create_session()
+    offer = db_sess.query(Offer).filter((Offer.id == offer_id), (Offer.is_taken == True)).first()
+    title = offer.title
+    id = offer.id
+    user = offer.user
+    date = offer.created_date
+    content = offer.content
+    db_sess.commit()
+    return render_template("look_details.html", title=title, date=date, content=content, user=user, id=id)
 
 
 @app.route('/orders_delete/<int:id>/<int:offer_id>')

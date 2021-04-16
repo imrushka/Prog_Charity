@@ -7,7 +7,10 @@
     {% for item in orders %}
         <div class="col-md6 border rounded">
             <div>
-                 Order ID: {{ item.offer_id }}
+                 Offer ID: {{ item.offer_id }}
+            </div>
+            <div>
+                 Offer title: {{ item.offer_id }}
             </div>
             <div>
                 Order Author - {{ current_user.name }}, Date of ordering - {{ item.created_date }}
@@ -15,6 +18,8 @@
             {% if current_user.is_authenticated%}
                 <div>
                     <a href="/orders_delete/{{ item.id }}/{{item.offer_id}}" class="btn btn-danger">Cancel order</a>
+                    <a href="/look_details/{{item.offer_id}}" class="btn btn-warning">Look details</a>
+
                 </div>
             {% endif %}
         </div>
