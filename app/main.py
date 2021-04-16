@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_restful import reqparse, abort, Api, Resource
 from app.data.orders import Order
+from app.forms.search_user import UserSearchForm
 from data import db_session
 from data.offers import Offer
 from data.users import User
@@ -164,7 +165,7 @@ def offers_delete(id):
 
 @app.route('/offers/<int:id>', methods=['GET', 'POST'])
 @login_required
-def edit_news(id):
+def edit_offers(id):
     form = OfferForm()
     if request.method == "GET":
         db_sess = db_session.create_session()
@@ -185,6 +186,25 @@ def edit_news(id):
         else:
             abort(404)
     return render_template('offers.html', title='Редактирование предложения', form=form)
+
+
+
+@app.route('/search_user', methods=['GET', 'POST'])
+@login_required
+def search_user():
+    form = UserSearchForm()
+    if request.method == "POST":
+        if form.validate_on_submit():
+            db_sess = db_session.create_session()
+            users = db_sess.query(User).filter(User.name.like(f'%{form.title.data}%'), User != current_user).all()
+            db_sess.commit()
+            if users:
+                return render_template("search_user.html", users=users, message=f"Users found: {len(users)}", form=form)
+            else:
+                return render_template("search_user.html", users=None, message=f"Users found: 0", form=form)
+        return redirect("/search_user")
+    return render_template("search_user.html", users=None, message=f"enter the name", form=form)
+
 
 
 @app.route("/")
