@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Offers of user: {{ user.name }} {{ user.email }}</h1>
+    <div>
+        <a href="/search_user" class="btn btn-warning">Back</a>
+    </div>
+    {% for item in offers %}
+        {% if item.is_taken == False %}
+        <div class="col-md6 border rounded">
+            <h2>{{ item.title }}</h2>s
+            <h2>Offer ID: {{ item.id }}</h2>
+            <div>
+                {{ item.content }}
+            </div>
+            <div>
+                Author - {{ item.user.name }}, Creation date - {{ item.created_date }}
+            </div>
+            {% if item.user != current_user %}
+            <div>
+                <a href="/make_order/{{ item.id }}" class="btn btn-warning">Order</a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

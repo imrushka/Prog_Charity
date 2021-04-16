@@ -22,14 +22,13 @@
       </button>
       <div class="collapse navbar-collapse" id="navbar">
         <div class="navbar-nav">
-          <a class="navbar-brand" href="#">Charity Site</a>
+          <a class="navbar-brand" href="#">{{current_user.name}}</a>
         {% if current_user.is_authenticated %}
             <a class="navbar-brand" href="/logout">Logout</a>
             <a class="navbar-brand" href="/">Home</a>
             <a class="navbar-brand" href="/my_orders">My orders</a>
             <a class="navbar-brand" href="/orders_to_take">Orders to accept</a>
             <a class="navbar-brand" href="/search_user">Find Users</a>
-
         {% else %}
             <p>
                 <a class="btn btn-primary " href="/register">Sign up</a>

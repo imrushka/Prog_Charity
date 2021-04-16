@@ -163,6 +163,18 @@ def offers_delete(id):
     return redirect('/')
 
 
+
+@app.route('/display_offers/<int:user_id>')
+@login_required
+def display_offers(user_id):
+    db_sess = db_session.create_session()
+    offers = db_sess.query(Offer).filter(Offer.user_id == user_id, Offer.is_taken == False).all()
+    user = db_sess.query(User).filter((User.id == user_id)).first()
+    db_sess.commit()
+    return render_template("display_offers.html", offers=offers, user=user)
+
+
+
 @app.route('/offers/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_offers(id):
