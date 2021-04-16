@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>My orders</h1>
+    <h1>Мои предложения</h1>
     {% if current_user.is_authenticated %}
     {% endif %}
     {% for item in orders %}
         <div class="col-md6 border rounded">
             <div>
-                 Order ID: {{ item.offer_id }}
+                 ID заказа: {{ item.offer_id }}
             </div>
             <div>
-                Order Author - {{ current_user.name }}, Date of ordering - {{ item.created_date }}
+                Автор заказа - {{ current_user.name }}, Дата заказа - {{ item.created_date }}
             </div>
             {% if current_user.is_authenticated%}
                 <div>
-                    <a href="/orders_delete/{{ item.id }}/{{item.offer_id}}" class="btn btn-danger">Cancel order</a>
+                    <a href="/orders_delete/{{ item.id }}/{{item.offer_id}}" class="btn btn-danger">Отменить заказ</a>
                 </div>
             {% endif %}
         </div>

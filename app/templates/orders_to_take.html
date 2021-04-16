@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>My orders</h1>
-    {% if current_user.is_authenticated %}
-    {% endif %}
+    <h1>Orders for me</h1>
+
     {% for item in orders %}
         <div class="col-md6 border rounded">
             <div>
                  Order ID: {{ item.offer_id }}
             </div>
             <div>
-                Order Author - {{ current_user.name }}, Date of ordering - {{ item.created_date }}
+                Order Author ID - {{item.user_id}}, Date of ordering - {{ item.created_date }}
             </div>
             {% if current_user.is_authenticated%}
                 <div>
-                    <a href="/orders_delete/{{ item.id }}/{{item.offer_id}}" class="btn btn-danger">Cancel order</a>
+                    <a href="/orders_fulfilled/{{ item.id }}/{{item.offer_id}}" class="btn btn-warning">Order is fulfilled</a>
                 </div>
             {% endif %}
         </div>
     {% endfor %}
+
 {% endblock %}

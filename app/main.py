@@ -2,11 +2,11 @@ from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from app.data.orders import Order
-from forms.offers import OfferForm
-from forms.user import RegisterForm, LoginForm
+from data import db_session
 from data.offers import Offer
 from data.users import User
-from data import db_session
+from forms.offers import OfferForm
+from forms.user import RegisterForm, LoginForm
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -49,24 +49,60 @@ def add_offer():
     return render_template('offers.html', title='Добавление предложения', form=form)
 
 
+@app.route('/orders_fulfilled/<int:id>/<int:offer_id>')
+@login_required
+def orders_fulfilled(id, offer_id):
+    db_sess = db_session.create_session()
+    offer = db_sess.query(Offer).filter(Offer.id == offer_id).first()
+    if offer:
+        offer.is_taken = False
+        db_sess.commit()
+    else:
+        abort(404)
+    order = db_sess.query(Order).filter(Order.id == id).first()
+    if order:
+        order.is_active = False
+        db_sess.commit()
+    else:
+        abort(404)
+    return redirect('/my_orders')
+
+
 @app.route("/make_order/<int:id>")
 @login_required
 def make_order(id):
-    #создаем заказ и помещаем его в БД
-    order = Order()
+    if current_user.is_authenticated:
+        # создаем заказ и помещаем его в БД
+        order = Order()
+        db_sess = db_session.create_session()
+        order.offer_id = id
+
+        # убираем предложение из списка не выбранных
+        offer = db_sess.query(Offer).filter((Offer.id == id)).one()
+        offer.is_taken = True
+
+        order.user_id = current_user.id
+        order.is_active = True
+        db_sess.add(order)
+        db_sess.commit()
+        return redirect("/my_orders")
+    else:
+        abort(404)
+
+
+
+
+@app.route("/orders_to_take")
+@login_required
+def orders_to_take():
     db_sess = db_session.create_session()
-    order.offer_id = id
-
-    #убираем предложение из списка не выбранных
-    offer = db_sess.query(Offer).filter((Offer.id == id)).one()
-    offer.is_taken = True
-
-    order.user_id = current_user.id
-    order.is_active = True
-    db_sess.add(order)
+    if current_user.is_authenticated:
+        offers_id = db_sess.query(Offer.id).filter((Offer.user_id == current_user.id))
+        orders = db_sess.query(Order).filter((Order.offer_id.in_(offers_id)), (Order.is_active == True))
+    else:
+        orders = db_sess.query(Order).filter(Order.is_active == True)
     db_sess.commit()
-    return redirect("/my_orders")
-
+    return render_template("orders_to_take.html", orders=orders)
 
 
 @app.route("/my_orders")
