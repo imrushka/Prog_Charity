@@ -1,6 +1,10 @@
+import math
+
+import requests
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from flask_restful import reqparse, abort, Api, Resource
+from flask_restful import abort, Api
+
 from app.data.orders import Order
 from app.forms.search_user import UserSearchForm
 from data import db_session
@@ -79,11 +83,9 @@ def make_order(id):
         order = Order()
         db_sess = db_session.create_session()
         order.offer_id = id
-
         # убираем предложение из списка не выбранных
         offer = db_sess.query(Offer).filter((Offer.id == id)).one()
         offer.is_taken = True
-
         order.user_id = current_user.id
         order.is_active = True
         db_sess.add(order)
@@ -116,6 +118,7 @@ def my_orders():
         orders = db_sess.query(Order).filter(Order.is_active == True)
     db_sess.commit()
     return render_template("orders.html", orders=orders)
+
 
 @app.route("/look_details/<int:offer_id>")
 @login_required
@@ -163,7 +166,6 @@ def offers_delete(id):
     return redirect('/')
 
 
-
 @app.route('/display_offers/<int:user_id>')
 @login_required
 def display_offers(user_id):
@@ -172,7 +174,6 @@ def display_offers(user_id):
     user = db_sess.query(User).filter((User.id == user_id)).first()
     db_sess.commit()
     return render_template("display_offers.html", offers=offers, user=user)
-
 
 
 @app.route('/offers/<int:id>', methods=['GET', 'POST'])
@@ -200,7 +201,6 @@ def edit_offers(id):
     return render_template('offers.html', title='Редактирование предложения', form=form)
 
 
-
 @app.route('/search_user', methods=['GET', 'POST'])
 @login_required
 def search_user():
@@ -216,7 +216,6 @@ def search_user():
                 return render_template("search_user.html", users=None, message=f"Users found: 0", form=form)
         return redirect("/search_user")
     return render_template("search_user.html", users=None, message=f"enter the name", form=form)
-
 
 
 @app.route("/")
@@ -243,7 +242,11 @@ def reqister():
         user = User(
             name=form.name.data,
             email=form.email.data,
-            about=form.about.data
+            about=form.about.data,
+            country=form.country.data,
+            city=form.city.data,
+            building=form.building.data,
+            district=form.district.data
         )
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -263,6 +266,79 @@ def login():
             return redirect("/")
         return render_template('login.html', message="Неправильный логин или пароль", form=form)
     return render_template('login.html', title='Авторизация', form=form)
+
+
+def calculate_distance_points(a, b):
+    degree_to_meters_factor = 111 * 1000  # 111 километров в метрах
+    a_lon, a_lat = float(a[0]), float(a[1])
+    b_lon, b_lat = float(b[0]), float(b[1])
+    # Берем среднюю по широте точку и считаем коэффициент для нее.
+    radians_lattitude = math.radians((a_lat + b_lat) / 2.)
+    lat_lon_factor = math.cos(radians_lattitude)
+    # Вычисляем смещения в метрах по вертикали и горизонтали.
+    dx = abs(a_lon - b_lon) * degree_to_meters_factor * lat_lon_factor
+    dy = abs(a_lat - b_lat) * degree_to_meters_factor
+    # Вычисляем расстояние между точками.
+    distance = math.sqrt(dx * dx + dy * dy)
+    return distance
+
+
+def return_coors(name):
+    toponym_to_find = name
+    geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
+    geocoder_params = {
+        "apikey": "40d1649f-0493-4b70-98ba-9853"
+                  "3de7710b",
+        "geocode": toponym_to_find,
+        "format": "json"}
+    response = requests.get(geocoder_api_server, params=geocoder_params)
+    if not response:
+        return None
+    # Преобразуем ответ в json-объект
+    json_response = response.json()
+    # Получаем первый топоним из ответа геокодера.
+    toponym = json_response["response"]["GeoObjectCollection"][
+        "featureMember"][0]["GeoObject"]
+    # Координаты центра топонима:
+    toponym_coodrinates = toponym["Point"]["pos"]
+    # Долгота и широта:
+    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+    toponym_lattitude = float(toponym_lattitude)
+    toponym_longitude = float(toponym_longitude)
+    return (toponym_longitude, toponym_lattitude)
+
+
+@app.route("/distance/<int:111>")
+@login_required
+def distance(user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.id == user_id).first()
+    address_to = f'{user.country},{user.city},{user.district},{user.building}'
+    address_from = f'{current_user.country},{current_user.city},{current_user.district},{current_user.building}'
+    print(address_from, address_to)
+    coordinates_to = return_coors(address_to)
+    coordinates_from = return_coors(address_from)
+    distance_from_to = calculate_distance_points(coordinates_from, coordinates_to)
+    delta = str(float(distance_from_to * 1.5 / 111134.861111))
+    print(distance_from_to)
+    center_lattitude = abs(coordinates_to[0] + coordinates_from[0]) / 2
+    center_longitude = abs(coordinates_to[1] + coordinates_from[1]) / 2
+    map_params = {
+        "ll": ",".join([str(center_lattitude), str(center_longitude)]),
+        "l": "map",
+        "spn": ",".join([delta, delta]),
+        "pt": f"{coordinates_to[0]},{coordinates_to[1]},pm2grl~{coordinates_from[0]},{coordinates_from[1]},pm2dgl",
+        "pl": ",".join(
+            [str(coordinates_to[0]), str(coordinates_to[1]), str(coordinates_from[0]), str(coordinates_from[1])]),
+
+    }
+    map_api_server = "http://static-maps.yandex.ru/1.x/"
+    # ... и выполняем запрос
+    response = requests.get(map_api_server, params=map_params)
+    map_url = response.url
+    print(map_url)
+    return render_template("show_distance.html", map_url=map_url, user=user, address_to=address_to,
+                           address_from=address_from, distance_from_to=distance_from_to)
 
 
 if __name__ == '__main__':

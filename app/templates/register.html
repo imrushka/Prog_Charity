@@ -41,6 +41,42 @@
         {% endfor %}
     </p>
     <p>
+        {{ form.country.label }}<br>
+        {{ form.country(class="form-control") }}<br>
+        {% for error in form.country.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.city.label }}<br>
+        {{ form.city(class="form-control") }}<br>
+        {% for error in form.city.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.district.label }}<br>
+        {{ form.district(class="form-control") }}<br>
+        {% for error in form.district.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.building.label }}<br>
+        {{ form.building(class="form-control") }}<br>
+        {% for error in form.building.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
         {{ form.about.label }}<br>
         {{ form.about(class="form-control") }}<br>
         {% for error in form.about.errors %}
