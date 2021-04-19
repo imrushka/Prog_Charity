@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div>Chat with {{user_to.name}}</div>
+    <a href="/messages/{{user_to.id}}" class="btn btn-primary">New message</a>
+    {% for message, user_from, user_to in messages%}
+    <div class="col-md6 border rounded">
+        <div>from {{user_from.name}} to {{user_to.name}}</div>
+        <div>{{message.title}}</div>
+        <div>{{message.content}}</div>
+        <div>{{message.created_date}}</div>
+    </div>
+    {% endfor %}
+{% endblock %}

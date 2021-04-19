@@ -17,6 +17,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\app\main.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\app\templates\message_history.html">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\data\offers.py">
           <value>
             <Attribute>

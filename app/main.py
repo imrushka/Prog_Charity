@@ -5,7 +5,9 @@ from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_restful import abort, Api
 
+from app.data.messages import Message
 from app.data.orders import Order
+from app.forms.message import MessageForm
 from app.forms.search_user import UserSearchForm
 from data import db_session
 from data.offers import Offer
@@ -36,7 +38,7 @@ def logout():
 
 def main():
     db_session.global_init("db/charity.db")
-    app.run()
+    app.run(debug=True)
 
 
 @app.route('/offers', methods=['GET', 'POST'])
@@ -54,6 +56,49 @@ def add_offer():
         db_sess.commit()
         return redirect('/')
     return render_template('offers.html', title='Добавление предложения', form=form)
+
+
+@app.route('/messages/<int:id_to>', methods=['GET', 'POST'])
+@login_required
+def add_message(id_to):
+    form = MessageForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        message = Message()
+        message.title = form.title.data
+        message.content = form.content.data
+        message.user_id_to = id_to
+        message.user_id_from = current_user.id
+        db_sess.add(message)
+        db_sess.commit()
+        return redirect(f'/messages_history/{id_to}')
+    return render_template('messages.html', form=form)
+
+
+def parse_the_date(date):
+    ymd = date.split()[0]
+    hms = date.split()[1]
+    year = int(ymd.split("-")[0])
+    month = int(ymd.split("-")[1])
+    day = int(ymd.split("-")[2])
+    hour = int(hms.split(":")[0])
+    minute = int(hms.split(":")[1])
+    second = int(hms.split(":")[2].split(".")[0])
+    return [year, month, day, hour, minute, second]
+
+
+@app.route('/messages_history/<int:id_to>')
+@login_required
+def message_history(id_to):
+    db_sess = db_session.create_session()
+    user_to = db_sess.query(User).filter((User.id == id_to)).first()
+    messages = db_sess.query(Message).filter((Message.user_id_to == id_to) | (Message.user_id_to == current_user.id)).all()
+    messages_users = []
+    for message in messages:
+        messages_users.append((message, db_sess.query(User).filter((User.id == message.user_id_from)).first(),  db_sess.query(User).filter((User.id == message.user_id_to)).first()))
+    messages_users.sort(key=lambda mesg: parse_the_date(str(mesg[0].created_date)))
+    db_sess.commit()
+    return render_template("message_history.html", messages=messages_users, user_to=user_to, current_user=current_user)
 
 
 @app.route('/orders_fulfilled/<int:id>/<int:offer_id>')
@@ -186,8 +231,7 @@ def edit_offers(id):
         if offer:
             form.title.data = offer.title
             form.content.data = offer.content
-        else:
-            abort(404)
+
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         offer = db_sess.query(Offer).filter(Offer.id == id, Offer.user == current_user).first()
@@ -196,8 +240,7 @@ def edit_offers(id):
             offer.content = form.content.data
             db_sess.commit()
             return redirect('/')
-        else:
-            abort(404)
+
     return render_template('offers.html', title='Редактирование предложения', form=form)
 
 
