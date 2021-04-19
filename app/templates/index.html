@@ -23,7 +23,7 @@
             {% elif current_user.is_authenticated and current_user != item.user%}
                 <div>
                     <a href="/make_order/{{ item.id }}" class="btn btn-warning">Order</a>
-                    <a href="/distance/{{ item.user_id }}" class="btn btn-success">View on map</a>
+                    <a href="/distance/{{ item.user_id }}" class="btn btn-success">Show on map</a>
                 </div>
             {% endif %}
         </div>

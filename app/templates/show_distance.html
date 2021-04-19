@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-      <img src={{map_url}}
-     width="500"
-     height="500" />
-
+      <div>Map for {{current_user.name}} and {{user.name}}</div>
+      <img src={{map_url}} width="700" height="500" />
+      <div>Address for {{current_user.name}} is {{address_from}}</div>
+      <div>Address for {{user.name}} is {{address_to}}</div>
+      <div>Distance between two users is {{distance_from_to}} meters</div>
 {% endblock %}

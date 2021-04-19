@@ -308,7 +308,7 @@ def return_coors(name):
     return (toponym_longitude, toponym_lattitude)
 
 
-@app.route("/distance/<int:111>")
+@app.route("/distance/<int:user_id>")
 @login_required
 def distance(user_id):
     db_sess = db_session.create_session()
@@ -338,7 +338,7 @@ def distance(user_id):
     map_url = response.url
     print(map_url)
     return render_template("show_distance.html", map_url=map_url, user=user, address_to=address_to,
-                           address_from=address_from, distance_from_to=distance_from_to)
+                           address_from=address_from, distance_from_to=int(distance_from_to), current_user=current_user)
 
 
 if __name__ == '__main__':
