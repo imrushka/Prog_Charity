@@ -3,8 +3,10 @@ import math
 import requests
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_ngrok import run_with_ngrok
 from flask_restful import abort, Api
 
+from app import messages_api
 from app.data.messages import Message
 from app.data.orders import Order
 from app.forms.message import MessageForm
@@ -16,8 +18,8 @@ from forms.offers import OfferForm
 from forms.user import RegisterForm, LoginForm
 
 app = Flask(__name__)
+run_with_ngrok(app)
 api = Api(app)
-# run_with_ngrok(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -37,8 +39,9 @@ def logout():
 
 
 def main():
+    app.register_blueprint(messages_api.blueprint)
     db_session.global_init("db/charity.db")
-    app.run(debug=True)
+    app.run()
 
 
 @app.route('/offers', methods=['GET', 'POST'])
@@ -92,10 +95,14 @@ def parse_the_date(date):
 def message_history(id_to):
     db_sess = db_session.create_session()
     user_to = db_sess.query(User).filter((User.id == id_to)).first()
-    messages = db_sess.query(Message).filter((Message.user_id_to == id_to) | (Message.user_id_to == current_user.id)).all()
+    messages = db_sess.query(Message).filter((Message.user_id_to == id_to),
+                                             (Message.user_id_from == current_user.id)).all()
+    messages += db_sess.query(Message).filter((Message.user_id_to == current_user.id),
+                                              (Message.user_id_from == id_to)).all()
     messages_users = []
     for message in messages:
-        messages_users.append((message, db_sess.query(User).filter((User.id == message.user_id_from)).first(),  db_sess.query(User).filter((User.id == message.user_id_to)).first()))
+        messages_users.append((message, db_sess.query(User).filter((User.id == message.user_id_from)).first(),
+                               db_sess.query(User).filter((User.id == message.user_id_to)).first()))
     messages_users.sort(key=lambda mesg: parse_the_date(str(mesg[0].created_date)))
     db_sess.commit()
     return render_template("message_history.html", messages=messages_users, user_to=user_to, current_user=current_user)
@@ -231,7 +238,6 @@ def edit_offers(id):
         if offer:
             form.title.data = offer.title
             form.content.data = offer.content
-
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         offer = db_sess.query(Offer).filter(Offer.id == id, Offer.user == current_user).first()
@@ -240,7 +246,6 @@ def edit_offers(id):
             offer.content = form.content.data
             db_sess.commit()
             return redirect('/')
-
     return render_template('offers.html', title='Редактирование предложения', form=form)
 
 
@@ -312,16 +317,13 @@ def login():
 
 
 def calculate_distance_points(a, b):
-    degree_to_meters_factor = 111 * 1000  # 111 километров в метрах
+    degree_to_meters_factor = 111 * 1000
     a_lon, a_lat = float(a[0]), float(a[1])
     b_lon, b_lat = float(b[0]), float(b[1])
-    # Берем среднюю по широте точку и считаем коэффициент для нее.
     radians_lattitude = math.radians((a_lat + b_lat) / 2.)
     lat_lon_factor = math.cos(radians_lattitude)
-    # Вычисляем смещения в метрах по вертикали и горизонтали.
     dx = abs(a_lon - b_lon) * degree_to_meters_factor * lat_lon_factor
     dy = abs(a_lat - b_lat) * degree_to_meters_factor
-    # Вычисляем расстояние между точками.
     distance = math.sqrt(dx * dx + dy * dy)
     return distance
 
@@ -337,14 +339,10 @@ def return_coors(name):
     response = requests.get(geocoder_api_server, params=geocoder_params)
     if not response:
         return None
-    # Преобразуем ответ в json-объект
     json_response = response.json()
-    # Получаем первый топоним из ответа геокодера.
     toponym = json_response["response"]["GeoObjectCollection"][
         "featureMember"][0]["GeoObject"]
-    # Координаты центра топонима:
     toponym_coodrinates = toponym["Point"]["pos"]
-    # Долгота и широта:
     toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
     toponym_lattitude = float(toponym_lattitude)
     toponym_longitude = float(toponym_longitude)
@@ -358,12 +356,10 @@ def distance(user_id):
     user = db_sess.query(User).filter(User.id == user_id).first()
     address_to = f'{user.country},{user.city},{user.district},{user.building}'
     address_from = f'{current_user.country},{current_user.city},{current_user.district},{current_user.building}'
-    print(address_from, address_to)
     coordinates_to = return_coors(address_to)
     coordinates_from = return_coors(address_from)
     distance_from_to = calculate_distance_points(coordinates_from, coordinates_to)
     delta = str(float(distance_from_to * 1.5 / 111134.861111))
-    print(distance_from_to)
     center_lattitude = abs(coordinates_to[0] + coordinates_from[0]) / 2
     center_longitude = abs(coordinates_to[1] + coordinates_from[1]) / 2
     map_params = {
@@ -376,10 +372,8 @@ def distance(user_id):
 
     }
     map_api_server = "http://static-maps.yandex.ru/1.x/"
-    # ... и выполняем запрос
     response = requests.get(map_api_server, params=map_params)
     map_url = response.url
-    print(map_url)
     return render_template("show_distance.html", map_url=map_url, user=user, address_to=address_to,
                            address_from=address_from, distance_from_to=int(distance_from_to), current_user=current_user)
 

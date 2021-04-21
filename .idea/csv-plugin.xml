@@ -24,6 +24,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\app\messages_api.py">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\app\templates\message_history.html">
           <value>
             <Attribute>
