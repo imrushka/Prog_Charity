@@ -18,7 +18,7 @@ from forms.offers import OfferForm
 from forms.user import RegisterForm, LoginForm
 
 app = Flask(__name__)
-run_with_ngrok(app)
+
 api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -376,6 +376,22 @@ def distance(user_id):
     map_url = response.url
     return render_template("show_distance.html", map_url=map_url, user=user, address_to=address_to,
                            address_from=address_from, distance_from_to=int(distance_from_to), current_user=current_user)
+
+
+@app.route("/my_messages")
+@login_required
+def my_messages():
+    db_sess = db_session.create_session()
+    my_msgs = db_sess.query(Message).filter((Message.user_id_to == current_user.id)).all()
+    my_msgs.sort(key=lambda msg: parse_the_date(str(msg.created_date)))
+    users = list()
+    for message in my_msgs:
+        user_from = db_sess.query(User).filter((User.id == message.user_id_from)).first()
+        if user_from not in users:
+            users.append(user_from)
+    return render_template("my_messages.html", users=users)
+
+
 
 
 if __name__ == '__main__':

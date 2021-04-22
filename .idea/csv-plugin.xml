@@ -17,6 +17,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\app\data\offers.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\app\data\users.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\app\main.py">
           <value>
             <Attribute>
