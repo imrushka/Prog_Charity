@@ -1,5 +1,5 @@
 import math
-
+# импотртим  библиотеки
 import requests
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -18,32 +18,32 @@ from forms.offers import OfferForm
 from forms.user import RegisterForm, LoginForm
 
 app = Flask(__name__)
-
+run_with_ngrok(app)
 api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
-
+# загружаем юзера
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
-
+# обработчик для выхода из личного кабинета
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect("/")
 
-
+# функция запуска и создания или подключения к БД
 def main():
     app.register_blueprint(messages_api.blueprint)
     db_session.global_init("db/charity.db")
     app.run()
 
-
+# обработчик добавления предложения
 @app.route('/offers', methods=['GET', 'POST'])
 @login_required
 def add_offer():
@@ -60,7 +60,7 @@ def add_offer():
         return redirect('/')
     return render_template('offers.html', title='Добавление предложения', form=form)
 
-
+# обработчик добавления сообщения
 @app.route('/messages/<int:id_to>', methods=['GET', 'POST'])
 @login_required
 def add_message(id_to):
@@ -77,7 +77,7 @@ def add_message(id_to):
         return redirect(f'/messages_history/{id_to}')
     return render_template('messages.html', form=form)
 
-
+# функция для парсинга даты
 def parse_the_date(date):
     ymd = date.split()[0]
     hms = date.split()[1]
@@ -89,7 +89,7 @@ def parse_the_date(date):
     second = int(hms.split(":")[2].split(".")[0])
     return [year, month, day, hour, minute, second]
 
-
+# обработчик для просмотра всех сообщений между пользователем и собой
 @app.route('/messages_history/<int:id_to>')
 @login_required
 def message_history(id_to):
@@ -107,7 +107,7 @@ def message_history(id_to):
     db_sess.commit()
     return render_template("message_history.html", messages=messages_users, user_to=user_to, current_user=current_user)
 
-
+# обработчик для изменнения статуса предложения после его выполнения
 @app.route('/orders_fulfilled/<int:id>/<int:offer_id>')
 @login_required
 def orders_fulfilled(id, offer_id):
@@ -126,7 +126,7 @@ def orders_fulfilled(id, offer_id):
         abort(404)
     return redirect('/')
 
-
+# обработчик создания заказа
 @app.route("/make_order/<int:id>")
 @login_required
 def make_order(id):
@@ -146,7 +146,7 @@ def make_order(id):
     else:
         abort(404)
 
-
+# обработчик для показа всех заказов на выполнение
 @app.route("/orders_to_take")
 @login_required
 def orders_to_take():
@@ -159,7 +159,7 @@ def orders_to_take():
     db_sess.commit()
     return render_template("orders_to_take.html", orders=orders)
 
-
+# обработчик для показа всех своих заказов
 @app.route("/my_orders")
 @login_required
 def my_orders():
@@ -171,7 +171,7 @@ def my_orders():
     db_sess.commit()
     return render_template("orders.html", orders=orders)
 
-
+# обработчик для просмотра деталей о предложении
 @app.route("/look_details/<int:offer_id>")
 @login_required
 def look_details(offer_id):
@@ -185,7 +185,7 @@ def look_details(offer_id):
     db_sess.commit()
     return render_template("look_details.html", title=title, date=date, content=content, user=user, id=id)
 
-
+# обработчик для отмены зказа
 @app.route('/orders_delete/<int:id>/<int:offer_id>')
 @login_required
 def orders_delete(id, offer_id):
@@ -204,7 +204,7 @@ def orders_delete(id, offer_id):
         abort(404)
     return redirect('/my_orders')
 
-
+# обработчик для уаления предложения
 @app.route('/offers_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def offers_delete(id):
@@ -217,7 +217,7 @@ def offers_delete(id):
         abort(404)
     return redirect('/')
 
-
+# обработчик для показа всех предложений одного пользователя
 @app.route('/display_offers/<int:user_id>')
 @login_required
 def display_offers(user_id):
@@ -227,7 +227,7 @@ def display_offers(user_id):
     db_sess.commit()
     return render_template("display_offers.html", offers=offers, user=user)
 
-
+# обработчик редактирования предложения
 @app.route('/offers/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_offers(id):
@@ -246,9 +246,9 @@ def edit_offers(id):
             offer.content = form.content.data
             db_sess.commit()
             return redirect('/')
-    return render_template('offers.html', title='Редактирование предложения', form=form)
+    return render_template('offers.html', title='Editing the offer', form=form)
 
-
+# обработчик для поиска пользователя
 @app.route('/search_user', methods=['GET', 'POST'])
 @login_required
 def search_user():
@@ -265,7 +265,7 @@ def search_user():
         return redirect("/search_user")
     return render_template("search_user.html", users=None, message=f"enter the name", form=form)
 
-
+# обработчик для начальной страницы
 @app.route("/")
 def index():
     db_sess = db_session.create_session()
@@ -275,9 +275,9 @@ def index():
         offers = db_sess.query(Offer).filter(Offer.is_taken != True)
     return render_template("index.html", offers=offers)
 
-
+# обработчик для регистрации нового пользователя
 @app.route('/register', methods=['GET', 'POST'])
-def reqister():
+def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
@@ -300,9 +300,9 @@ def reqister():
         db_sess.add(user)
         db_sess.commit()
         return redirect('/login')
-    return render_template('register.html', title='Регистрация', form=form)
+    return render_template('register.html', title='Registration', form=form)
 
-
+# обработчик для авторизирования пользователя
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -312,10 +312,10 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
-        return render_template('login.html', message="Неправильный логин или пароль", form=form)
-    return render_template('login.html', title='Авторизация', form=form)
+        return render_template('login.html', message="Incorrect password or login", form=form)
+    return render_template('login.html', title='Log in', form=form)
 
-
+# функция для подсчета расстояния между двумя точками
 def calculate_distance_points(a, b):
     degree_to_meters_factor = 111 * 1000
     a_lon, a_lat = float(a[0]), float(a[1])
@@ -327,7 +327,7 @@ def calculate_distance_points(a, b):
     distance = math.sqrt(dx * dx + dy * dy)
     return distance
 
-
+# обработчик для поиска координат по названию места
 def return_coors(name):
     toponym_to_find = name
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
@@ -348,7 +348,7 @@ def return_coors(name):
     toponym_longitude = float(toponym_longitude)
     return (toponym_longitude, toponym_lattitude)
 
-
+# обработчик для получения данных о карте для двух адресов
 @app.route("/distance/<int:user_id>")
 @login_required
 def distance(user_id):
@@ -377,7 +377,7 @@ def distance(user_id):
     return render_template("show_distance.html", map_url=map_url, user=user, address_to=address_to,
                            address_from=address_from, distance_from_to=int(distance_from_to), current_user=current_user)
 
-
+# обработчик для просмотра моих сообщений
 @app.route("/my_messages")
 @login_required
 def my_messages():
@@ -390,8 +390,6 @@ def my_messages():
         if user_from not in users:
             users.append(user_from)
     return render_template("my_messages.html", users=users)
-
-
 
 
 if __name__ == '__main__':
